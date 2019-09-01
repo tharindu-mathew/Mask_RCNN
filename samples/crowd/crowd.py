@@ -54,7 +54,7 @@ DEFAULT_LOGS_DIR = os.path.join(ROOT_DIR, "logs")
 ############################################################
 
 
-class CrowdConfig(Config):
+class BalloonConfig(Config):
     """Configuration for training on the toy  dataset.
     Derives from the base Config class and overrides some values.
     """
@@ -67,13 +67,29 @@ class CrowdConfig(Config):
 
     # Number of classes (including background)
     #NUM_CLASSES = 1 + 1  # Background + balloon
-    NUM_CLASSES = 1 + 3  # Background + area + path + people + add geometry later
+    NUM_CLASSES = 1 + 1  # Background + area + path + people + add geometry later
 
     # Number of training steps per epoch
     STEPS_PER_EPOCH = 100
 
     # Skip detections with < 90% confidence
     DETECTION_MIN_CONFIDENCE = 0.9
+
+    BACKBONE = "resnet50"
+
+    IMAGE_MIN_DIM = 512
+    IMAGE_MAX_DIM = 512
+
+    # Reduce training ROIs per image because the images are small and have
+    # few objects. Aim to allow ROI sampling to pick 33% positive ROIs.
+    TRAIN_ROIS_PER_IMAGE = 32
+
+    # Use a small epoch since the data is simple
+    STEPS_PER_EPOCH = 100
+
+    # use small validation steps since the epoch is small
+    VALIDATION_STEPS = 5
+
 
 
 ############################################################
@@ -270,6 +286,7 @@ def detect_and_color_splash(model, image_path=None, video_path=None):
                 count += 1
         vwriter.release()
     print("Saved to ", file_name)
+
 
 
 ############################################################
