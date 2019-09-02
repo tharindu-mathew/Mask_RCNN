@@ -69,26 +69,23 @@ class BalloonConfig(Config):
     #NUM_CLASSES = 1 + 1  # Background + balloon
     NUM_CLASSES = 1 + 1  # Background + area + path + people + add geometry later
 
-    # Number of training steps per epoch
-    STEPS_PER_EPOCH = 100
-
     # Skip detections with < 90% confidence
     DETECTION_MIN_CONFIDENCE = 0.9
 
-    BACKBONE = "resnet50"
+    BACKBONE = "resnet101"
 
     IMAGE_MIN_DIM = 512
     IMAGE_MAX_DIM = 512
 
     # Reduce training ROIs per image because the images are small and have
     # few objects. Aim to allow ROI sampling to pick 33% positive ROIs.
-    TRAIN_ROIS_PER_IMAGE = 32
+    #TRAIN_ROIS_PER_IMAGE = 32
 
     # Use a small epoch since the data is simple
-    STEPS_PER_EPOCH = 100
+    #STEPS_PER_EPOCH = 100
 
     # use small validation steps since the epoch is small
-    VALIDATION_STEPS = 5
+    #VALIDATION_STEPS = 5
 
 
 
@@ -213,7 +210,7 @@ def train(model):
     model.train(dataset_train, dataset_val,
                 learning_rate=config.LEARNING_RATE,
                 epochs=30,
-                layers='heads')
+                layers='all')
 
 
 def color_splash(image, mask):
