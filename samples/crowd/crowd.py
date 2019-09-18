@@ -110,7 +110,7 @@ class BalloonDataset(utils.Dataset):
         """
         # Add classes. We have only one class to add.
         for key in name_map:
-            self.add_class(key, name_map[key], key)
+            self.add_class("balloon", name_map[key], key)
 
         # Train or validation dataset?
         assert subset in ["train", "val"]
@@ -200,7 +200,7 @@ class BalloonDataset(utils.Dataset):
 
         # Return mask, and array of class IDs of each instance. Since we have
         # one class ID only, we return an array of 1s
-        return mask, info['class_ids']
+        return mask, np.array(info['class_ids'], dtype=np.int32)
 
     def image_reference(self, image_id):
         """Return the path of the image."""
