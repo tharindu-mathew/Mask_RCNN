@@ -55,6 +55,7 @@ DEFAULT_LOGS_DIR = os.path.join(ROOT_DIR, "logs")
 #  Configurations
 ############################################################
 
+name_map = { "wall" : 1, "area" : 2, "path" : 3}
 
 class BalloonConfig(Config):
     """Configuration for training on the toy  dataset.
@@ -71,7 +72,7 @@ class BalloonConfig(Config):
 
     # Number of classes (including background)
     #NUM_CLASSES = 1 + 1  # Background + balloon
-    NUM_CLASSES = 1 + 1  # Background + area + path + people + add geometry later
+    NUM_CLASSES = len(name_map) + 1  # Background + area + path + people + add geometry later
 
     # Skip detections with < 90% confidence
     DETECTION_MIN_CONFIDENCE = 0.9
@@ -108,7 +109,8 @@ class BalloonDataset(utils.Dataset):
         subset: Subset to load: train or val
         """
         # Add classes. We have only one class to add.
-        self.add_class("balloon", 1, "balloon")
+        for key in name_map:
+            self.add_class(key, name_map[key], key)
 
         # Train or validation dataset?
         assert subset in ["train", "val"]
@@ -145,8 +147,19 @@ class BalloonDataset(utils.Dataset):
             # The if condition is needed to support VIA versions 1.x and 2.x.
             if type(a['regions']) is dict:
                 polygons = [r['shape_attributes'] for r in a['regions'].values()]
+                objects = [r['region_attributes'] for r in a['regions'].values()]
             else:
                 polygons = [r['shape_attributes'] for r in a['regions']]
+                objects = [r['region_attributes'] for r in a['regions']]
+
+            class_ids = []
+
+            for key_struct in objects:
+                for key in key_struct:
+                    if key not in name_map.keys():
+                        raise Exception(key, 'not in name map', name_map)
+
+                    class_ids.append(name_map[key])
 
             # load_mask() needs the image size to convert polygons to masks.
             # Unfortunately, VIA doesn't include it in JSON, so we must read
@@ -160,7 +173,8 @@ class BalloonDataset(utils.Dataset):
                 image_id=a['filename'],  # use file name as a unique image id
                 path=image_path,
                 width=width, height=height,
-                polygons=polygons)
+                polygons=polygons,
+                class_ids=class_ids)
 
     def load_mask(self, image_id):
         """Generate instance masks for an image.
@@ -186,7 +200,7 @@ class BalloonDataset(utils.Dataset):
 
         # Return mask, and array of class IDs of each instance. Since we have
         # one class ID only, we return an array of 1s
-        return mask.astype(np.bool), np.ones([mask.shape[-1]], dtype=np.int32)
+        return mask, info['class_ids']
 
     def image_reference(self, image_id):
         """Return the path of the image."""
