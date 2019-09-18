@@ -2,7 +2,7 @@
 # coding: utf-8
 
 # # Mask R-CNN - Inspect Ballon Trained Model
-# 
+#
 # Code and visualizations to test, debug, and evaluate the Mask R-CNN model.
 
 # In[1]:
@@ -20,6 +20,9 @@ import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import skimage.draw
+
+os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"   # see issue #152
+os.environ["CUDA_VISIBLE_DEVICES"]="1"
 
 # Root directory of the project
 ROOT_DIR = os.path.abspath("../..")
@@ -39,7 +42,7 @@ from samples.crowd import crowd
 if __name__ == '__main__':
 
     # Directory to save logs and trained model
-    MODEL_DIR = os.path.join(ROOT_DIR, "logs")
+    MODEL_DIR = os.path.join(".", "logs")
 
     # Path to Ballon trained weights
     # You can download this file from the Releases page
@@ -53,7 +56,7 @@ if __name__ == '__main__':
 
 
     config = crowd.BalloonConfig()
-    BALLOON_DIR = os.path.join(ROOT_DIR, "datasets\\multi-sketch-gen-3")
+    BALLOON_DIR = os.path.join(".", "data/seg-multi-sketch-gen-5")
 
 
     # In[3]:

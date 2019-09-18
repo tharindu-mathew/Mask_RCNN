@@ -34,6 +34,8 @@ import datetime
 import numpy as np
 import skimage.draw
 
+os.environ["CUDA_VISIBLE_DEVICES"]="0,1"
+
 # Root directory of the project
 ROOT_DIR = os.path.abspath("../../")
 
@@ -63,7 +65,9 @@ class BalloonConfig(Config):
 
     # We use a GPU with 12GB memory, which can fit two images.
     # Adjust down if you use a smaller GPU.
-    IMAGES_PER_GPU = 2
+    IMAGES_PER_GPU = 4
+
+    GPU_COUNT = 1
 
     # Number of classes (including background)
     #NUM_CLASSES = 1 + 1  # Background + balloon
@@ -74,6 +78,7 @@ class BalloonConfig(Config):
 
     BACKBONE = "resnet101"
 
+    IMAGE_RESIZE_MODE = "none"
     IMAGE_MIN_DIM = 512
     IMAGE_MAX_DIM = 512
 
@@ -82,10 +87,12 @@ class BalloonConfig(Config):
     #TRAIN_ROIS_PER_IMAGE = 32
 
     # Use a small epoch since the data is simple
-    #STEPS_PER_EPOCH = 100
+    STEPS_PER_EPOCH = 1000
 
     # use small validation steps since the epoch is small
     #VALIDATION_STEPS = 5
+    RPN_NMS_THRESHOLD = 0.95
+    DETECTION_NMS_THRESHOLD = 0.95
 
 
 
@@ -139,7 +146,7 @@ class BalloonDataset(utils.Dataset):
             if type(a['regions']) is dict:
                 polygons = [r['shape_attributes'] for r in a['regions'].values()]
             else:
-                polygons = [r['shape_attributes'] for r in a['regions']] 
+                polygons = [r['shape_attributes'] for r in a['regions']]
 
             # load_mask() needs the image size to convert polygons to masks.
             # Unfortunately, VIA doesn't include it in JSON, so we must read

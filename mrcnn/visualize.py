@@ -584,6 +584,7 @@ def display_instances_with_save(image, boxes, masks, class_ids, class_names, sav
             ax.add_patch(p)
     ax.imshow(masked_image.astype(np.uint8))
     plt.savefig(save_name)  # to save file in local directory for n no of input images with date and time
+    plt.close()
 
     # plt.close()
     # import time
