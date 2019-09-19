@@ -72,7 +72,7 @@ class BalloonConfig(Config):
 
     # Number of classes (including background)
     #NUM_CLASSES = 1 + 1  # Background + balloon
-    NUM_CLASSES = len(name_map) + 1  # Background + area + path + people + add geometry later
+    NUM_CLASSES = 1 + len(name_map) # Background + area + path + people + add geometry later
 
     # Skip detections with < 90% confidence
     DETECTION_MIN_CONFIDENCE = 0.9
@@ -229,7 +229,8 @@ def train(model):
     # no need to train all layers, just the heads should do it.
     print("Training network heads")
     model.train(dataset_train, dataset_val,
-                learning_rate=config.LEARNING_RATE,
+                #learning_rate=config.LEARNING_RATE,
+                learning_rate=0.00001,
                 epochs=30,
                 layers='all')
 

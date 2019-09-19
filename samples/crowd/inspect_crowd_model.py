@@ -22,7 +22,7 @@ import matplotlib.patches as patches
 import skimage.draw
 
 os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"   # see issue #152
-os.environ["CUDA_VISIBLE_DEVICES"]="1"
+os.environ["CUDA_VISIBLE_DEVICES"]="0"
 
 # Root directory of the project
 ROOT_DIR = os.path.abspath("../..")
@@ -38,6 +38,8 @@ from mrcnn.model import log
 from samples.crowd import crowd
 
 # get_ipython().run_line_magic('matplotlib', 'inline')
+
+name_map = { "wall" : 1, "area" : 2, "path" : 3}
 
 if __name__ == '__main__':
 
@@ -56,7 +58,7 @@ if __name__ == '__main__':
 
 
     config = crowd.BalloonConfig()
-    BALLOON_DIR = os.path.join(".", "data/seg-multi-sketch-gen-5")
+    BALLOON_DIR = os.path.join(".", "data/seg-v6")
 
 
     # In[3]:
@@ -68,6 +70,8 @@ if __name__ == '__main__':
         # Run detection on one image at a time
         GPU_COUNT = 1
         IMAGES_PER_GPU = 1
+        NUM_CLASSES = 1 + len(name_map) # Background + area + path + people + add geometry later
+
 
     config = InferenceConfig()
     config.display()
