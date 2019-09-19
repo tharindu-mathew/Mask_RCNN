@@ -83,13 +83,13 @@ class BalloonConfig(Config):
     IMAGE_MIN_DIM = 256
     IMAGE_MAX_DIM = 256
 
-    RPN_ANCHOR_SCALES = (32, 64, 128)
+    RPN_ANCHOR_SCALES = (32, 64, 128, 256, 512)
     # Reduce training ROIs per image because the images are small and have
     # few objects. Aim to allow ROI sampling to pick 33% positive ROIs.
     #TRAIN_ROIS_PER_IMAGE = 32
 
     # Use a small epoch since the data is simple
-    STEPS_PER_EPOCH = 200
+    STEPS_PER_EPOCH = 100
 
     # use small validation steps since the epoch is small
     #VALIDATION_STEPS = 5
