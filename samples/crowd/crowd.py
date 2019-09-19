@@ -80,8 +80,8 @@ class BalloonConfig(Config):
     BACKBONE = "resnet101"
 
     IMAGE_RESIZE_MODE = "none"
-    IMAGE_MIN_DIM = 512
-    IMAGE_MAX_DIM = 512
+    IMAGE_MIN_DIM = 256
+    IMAGE_MAX_DIM = 256
 
     # Reduce training ROIs per image because the images are small and have
     # few objects. Aim to allow ROI sampling to pick 33% positive ROIs.
@@ -230,8 +230,8 @@ def train(model):
     print("Training network heads")
     model.train(dataset_train, dataset_val,
                 #learning_rate=config.LEARNING_RATE,
-                learning_rate=0.00001,
-                epochs=30,
+                learning_rate=0.0001,
+                epochs=5,
                 layers='all')
 
 
