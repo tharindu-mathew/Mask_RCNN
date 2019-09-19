@@ -125,7 +125,7 @@ if __name__ == '__main__':
 
     # ## Load Model
 
-    # In[7]:
+    # In[7]
 
 
     # Create model in inference mode

@@ -66,7 +66,7 @@ class BalloonConfig(Config):
 
     # We use a GPU with 12GB memory, which can fit two images.
     # Adjust down if you use a smaller GPU.
-    IMAGES_PER_GPU = 4
+    IMAGES_PER_GPU = 8
 
     GPU_COUNT = 1
 
@@ -77,23 +77,24 @@ class BalloonConfig(Config):
     # Skip detections with < 90% confidence
     DETECTION_MIN_CONFIDENCE = 0.9
 
-    BACKBONE = "resnet101"
+    BACKBONE = "resnet50"
 
     IMAGE_RESIZE_MODE = "none"
     IMAGE_MIN_DIM = 256
     IMAGE_MAX_DIM = 256
 
+    RPN_ANCHOR_SCALES = (32, 64, 128)
     # Reduce training ROIs per image because the images are small and have
     # few objects. Aim to allow ROI sampling to pick 33% positive ROIs.
     #TRAIN_ROIS_PER_IMAGE = 32
 
     # Use a small epoch since the data is simple
-    STEPS_PER_EPOCH = 1000
+    STEPS_PER_EPOCH = 200
 
     # use small validation steps since the epoch is small
     #VALIDATION_STEPS = 5
-    RPN_NMS_THRESHOLD = 0.95
-    DETECTION_NMS_THRESHOLD = 0.95
+    #RPN_NMS_THRESHOLD = 0.95
+    #DETECTION_NMS_THRESHOLD = 0.95
 
 
 
