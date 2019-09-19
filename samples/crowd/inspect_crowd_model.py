@@ -71,8 +71,7 @@ if __name__ == '__main__':
         GPU_COUNT = 1
         IMAGES_PER_GPU = 1
         NUM_CLASSES = 1 + len(name_map) # Background + area + path + people + add geometry later
-        RPN_ANCHOR_SCALES = (32, 64, 128)
-        BACKBONE = "resnet50"
+        BACKBONE = "resnet101"
 
         IMAGE_RESIZE_MODE = "none"
         IMAGE_MIN_DIM = 256
