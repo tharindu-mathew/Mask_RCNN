@@ -77,11 +77,13 @@ class BalloonConfig(Config):
     # Skip detections with < 90% confidence
     DETECTION_MIN_CONFIDENCE = 0.9
 
-    BACKBONE = "resnet50"
+    BACKBONE = "resnet101"
 
     IMAGE_RESIZE_MODE = "none"
-    IMAGE_MIN_DIM = 256
-    IMAGE_MAX_DIM = 256
+    #IMAGE_MIN_DIM = 256
+    #IMAGE_MAX_DIM = 256
+    IMAGE_MIN_DIM = 512
+    IMAGE_MAX_DIM = 512
 
     RPN_ANCHOR_SCALES = (32, 64, 128, 256, 512)
     # Reduce training ROIs per image because the images are small and have
@@ -89,7 +91,7 @@ class BalloonConfig(Config):
     #TRAIN_ROIS_PER_IMAGE = 32
 
     # Use a small epoch since the data is simple
-    STEPS_PER_EPOCH = 100
+    STEPS_PER_EPOCH = 1000
 
     # use small validation steps since the epoch is small
     #VALIDATION_STEPS = 5
@@ -232,7 +234,7 @@ def train(model):
     model.train(dataset_train, dataset_val,
                 #learning_rate=config.LEARNING_RATE,
                 learning_rate=0.0001,
-                epochs=5,
+                epochs=200,
                 layers='all')
 
 
