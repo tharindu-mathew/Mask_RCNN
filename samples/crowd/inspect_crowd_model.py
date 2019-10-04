@@ -58,7 +58,7 @@ if __name__ == '__main__':
 
 
     config = crowd.BalloonConfig()
-    BALLOON_DIR = os.path.join(".", "data/seg-v6")
+    BALLOON_DIR = os.path.join(".", "data/seg-v8")
 
 
     # In[3]:
@@ -74,8 +74,11 @@ if __name__ == '__main__':
         BACKBONE = "resnet101"
 
         IMAGE_RESIZE_MODE = "none"
-        IMAGE_MIN_DIM = 256
-        IMAGE_MAX_DIM = 256
+        IMAGE_MIN_DIM = 512
+        IMAGE_MAX_DIM = 512
+        DETECTION_MIN_CONFIDENCE = 0.9
+        RPN_NMS_THRESHOLD = 0.85
+        DETECTION_NMS_THRESHOLD = 0.70
 
 
 
@@ -161,6 +164,8 @@ if __name__ == '__main__':
 
     # In[9]:
 
+    APs = []
+
     for image_id in dataset.image_ids:
     # image_id = random.choice(dataset.image_ids)
         image, image_meta, gt_class_id, gt_bbox, gt_mask =    modellib.load_image_gt(dataset, config, image_id, use_mini_mask=False)
@@ -185,6 +190,13 @@ if __name__ == '__main__':
         log("gt_class_id", gt_class_id)
         log("gt_bbox", gt_bbox)
         log("gt_mask", gt_mask)
+
+        AP, precisions, recalls, overlaps = \
+            utils.compute_ap(gt_bbox, gt_class_id, gt_mask,
+                             r['rois'], r['class_ids'], r['scores'], r['masks'])
+        APs.append(AP)
+
+    print("mAP @ IoU=50: ", np.mean(APs))
 
     # mask = r['masks']
     # mask = (np.sum(mask, -1, keepdims=True) >= 1)

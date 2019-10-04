@@ -55,7 +55,7 @@ DEFAULT_LOGS_DIR = os.path.join(ROOT_DIR, "logs")
 #  Configurations
 ############################################################
 
-name_map = { "wall" : 1, "area" : 2, "path" : 3}
+name_map = { "wall" : 1, "area" : 2, "path" : 3, "intersection" : 4}
 
 class BalloonConfig(Config):
     """Configuration for training on the toy  dataset.
@@ -116,7 +116,7 @@ class BalloonDataset(utils.Dataset):
             self.add_class("balloon", name_map[key], key)
 
         # Train or validation dataset?
-        assert subset in ["train", "val"]
+        assert subset in ["train", "val", "test"]
         dataset_dir = os.path.join(dataset_dir, subset)
 
         # Load annotations
@@ -156,13 +156,15 @@ class BalloonDataset(utils.Dataset):
                 objects = [r['region_attributes'] for r in a['regions']]
 
             class_ids = []
+            instance_ids = []
 
             for key_struct in objects:
-                for key in key_struct:
+                for key, val in key_struct.items():
                     if key not in name_map.keys():
                         raise Exception(key, 'not in name map', name_map)
 
                     class_ids.append(name_map[key])
+                    instance_ids.append(val)
 
             # load_mask() needs the image size to convert polygons to masks.
             # Unfortunately, VIA doesn't include it in JSON, so we must read
@@ -177,7 +179,8 @@ class BalloonDataset(utils.Dataset):
                 path=image_path,
                 width=width, height=height,
                 polygons=polygons,
-                class_ids=class_ids)
+                class_ids=class_ids,
+                instance_ids=instance_ids)
 
     def load_mask(self, image_id):
         """Generate instance masks for an image.
@@ -194,16 +197,50 @@ class BalloonDataset(utils.Dataset):
         # Convert polygons to a bitmap mask of shape
         # [height, width, instance_count]
         info = self.image_info[image_id]
-        mask = np.zeros([info["height"], info["width"], len(info["polygons"])],
-                        dtype=np.uint8)
-        for i, p in enumerate(info["polygons"]):
-            # Get indexes of pixels inside the polygon and set them to 1
-            rr, cc = skimage.draw.polygon(p['all_points_y'], p['all_points_x'])
-            mask[rr, cc, i] = 1
+        instance_ids = info['instance_ids']
+        class_ids = info['class_ids']
 
-        # Return mask, and array of class IDs of each instance. Since we have
-        # one class ID only, we return an array of 1s
-        return mask, np.array(info['class_ids'], dtype=np.int32)
+        # we have to modify things because instance ids can be repeated, due to disjoint polygons
+        distinct_instance_ids = list(set(instance_ids))
+        distinct_instance_id_dict = {}
+        distinct_instance_id_reverse_lookup = {}
+
+        for i, iid in enumerate(distinct_instance_ids):
+            distinct_instance_id_dict[i] = iid
+            distinct_instance_id_reverse_lookup[iid] = i
+
+        # if (len(distinct_instance_ids) != len(instance_ids)):
+        #     print("we found overlapped items splitting")
+
+        mask = np.zeros([info["height"], info["width"], len(distinct_instance_ids)], dtype=np.uint8)
+
+        class_ids_for_new_distinct_iids = []
+        for instance_id in distinct_instance_ids:
+            orig_idx = instance_ids.index(instance_id)
+            class_id = class_ids[orig_idx]
+            class_ids_for_new_distinct_iids.append(class_id)
+
+        for i, p in enumerate(info["polygons"]):
+            rr, cc = skimage.draw.polygon(p['all_points_y'], p['all_points_x'])
+            # idx of the mask is the id of the distinct instance id
+            # get instance id of the polygon from instance_ids array,
+            # then convert that to an
+            instance_id = instance_ids[i]
+            new_distinct_id = distinct_instance_id_reverse_lookup[instance_id]
+            mask[rr, cc, new_distinct_id] = 1
+
+        return mask, np.array(class_ids_for_new_distinct_iids, dtype=np.int32)
+
+    # mask = np.zeros([info["height"], info["width"], len(info["polygons"])],
+        #                 dtype=np.uint8)
+        # for i, p in enumerate(info["polygons"]):
+        #     # Get indexes of pixels inside the polygon and set them to 1
+        #     rr, cc = skimage.draw.polygon(p['all_points_y'], p['all_points_x'])
+        #     mask[rr, cc, i] = 1
+        #
+        # # Return mask, and array of class IDs of each instance. Since we have
+        # # one class ID only, we return an array of 1s
+        # return mask, np.array(info['class_ids'], dtype=np.int32)
 
     def image_reference(self, image_id):
         """Return the path of the image."""
