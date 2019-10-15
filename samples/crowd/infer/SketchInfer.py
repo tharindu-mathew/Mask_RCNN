@@ -238,7 +238,6 @@ class RegressInfer:
 
     def infer_img(self, img_numpy):
         sample = Image.fromarray(img_numpy);
-        sample.save('test.png');
         inputs = self.regress_data_transforms['infer'](sample)
         inputs = inputs.unsqueeze(0)
         inputs = inputs.to(self.device)
@@ -444,13 +443,42 @@ class TotalInfer:
         self.colorline(x, y, z, cmap=plt.get_cmap('bwr'), linewidth=2)
         plt.show()
 
+    def segment_img(self, img_numpy):
+        mask_dict = self.segment_infer.segment_imgV2(img_numpy)
+        return mask_dict
+
+    def regress_imgs(self, label_and_imgs):
+        regress_outputs = {}
+        i = 0
+        for data_type in label_and_imgs.keys():
+            all_imgs = label_and_imgs[data_type]
+            for img in all_imgs:
+                for key in self.regress_keys:
+                    if key.startswith(data_type):
+                        sample = Image.fromarray(img);
+                        sample.save('regress' + str(data_type) + str(i) + '.png')
+                        i += 1
+                        regress_output = self.regress_model_map[key].infer_img(img)
+                        points = regress_output.reshape((4, 2))
+                        if data_type not in regress_outputs:
+                            regress_outputs[data_type] = []
+                        if data_type.startswith('area'):
+                            regress_outputs[data_type].append({"control_points": regress_output.tolist()})
+                            self.show_catmull_spline(points, True)
+                        else:
+                            # regress_output = splinefit.fit_data(thresh, regress_output.reshape((4, 2)))
+                            regress_outputs[data_type].append({"control_points": regress_output.tolist()})
+                            self.show_catmull_spline(points, False)
+        return regress_outputs
+
     def infer_imgs(self, img_numpy):
         result = self.segment_infer.segment_img(img_numpy)
 
         regress_outputs = []
+        i = 0
         for data_type in result.keys():
             all_imgs = result[data_type]
-            for img in all_imgs:
+            for img, roi in all_imgs:
                 if data_type.startswith('wall'):
                     # wall_line_segments = self.predict_line_segments(img)
                     wall_contours = self.contour_extraction_wall(img)
@@ -459,7 +487,26 @@ class TotalInfer:
                 else:
                     for key in self.regress_keys:
                         if key.startswith(data_type):
+                            # scale image before infer
+                            # h, w, c = img.shape
+                            # y1, x1, y2, x2 = roi
+                            #
+                            # roi_img = img[y1:y2, x1:x2, :]
+                            #
+                            # dest_img_w = 224
+                            # src_img_w = 210
+                            # img_offset = (dest_img_w - src_img_w)// 2
+                            # scaled_img_224 = np.ones((dest_img_w, dest_img_w, 3)).astype(np.uint8) * 255
+                            # scaled_roi = cv2.resize(roi_img, (src_img_w, src_img_w))
+                            # scaled_img_224[img_offset:img_offset+src_img_w, img_offset:img_offset+src_img_w, :] = scaled_roi
+                            # cv2.imwrite('scaled_img' + str(i) + data_type + '.png', scaled_img_224)
+                            # i += 1
+                            # regress_output = self.regress_model_map[key].infer_img(scaled_img_224)
+
                             regress_output = self.regress_model_map[key].infer_img(img)
+
+                            # ratio = 224.0/256.0
+                            # regress_output *= ratio
                             # regress_output = splinefit.fit_data(img, regress_output.reshape((4, 2)))
                             points = regress_output.reshape((4, 2))
                             gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -467,11 +514,11 @@ class TotalInfer:
 
                             if (data_type.startswith('area')):
                                 blob_centers = self.contour_extraction_area(thresh)
-                                regress_outputs.append({data_type: {"control_points" : regress_output.tolist(), "blobs" : blob_centers.tolist()}})
+                                regress_outputs.append({data_type: {"control_points" : regress_output.tolist(), "blobs" : blob_centers.tolist(), "roi": roi.tolist() }})
                                 self.show_catmull_spline(points, True)
                             else:
                                 # regress_output = splinefit.fit_data(thresh, regress_output.reshape((4, 2)))
-                                regress_outputs.append({data_type: {"control_points": regress_output.tolist()}})
+                                regress_outputs.append({data_type: {"control_points": regress_output.tolist(), "roi": roi.tolist() }})
                                 self.show_catmull_spline(points, False)
 
         return regress_outputs

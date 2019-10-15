@@ -6,6 +6,13 @@ import re
 import time
 import numpy as np
 import tensorflow as tf
+from keras.backend.tensorflow_backend import set_session
+config = tf.ConfigProto()
+config.gpu_options.allow_growth = True  # dynamically grow the memory used on the GPU
+config.log_device_placement = True  # to log device placement (on which device the operation ran)
+sess = tf.Session(config=config)
+set_session(sess)  # set this TensorFlow session as the default session for Keras
+
 import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
@@ -35,7 +42,7 @@ class SketchSegment:
         self.model_dir = model_dir
         self.data_dir = data_dir
         self.model = None
-        self.name_map = { "wall" : 1, "area" : 2, "path" : 3}
+        self.name_map = crowd.name_map
 
     def load_model(self):
         config = crowd.BalloonConfig()
@@ -72,11 +79,30 @@ class SketchSegment:
         self.class_names = dataset.class_names
         #self.class_ids = dataset.class_ids
 
+    def segment_imgV2(self, image):
+        r = self.model.detect([image], verbose=1)[0]
+        masks = r['masks']
+        class_ids = r['class_ids']
+        # scores = r['scores']
+        # rois = r['rois']
+        N = class_ids.shape[0]
+
+        #labels = [ for class_id in class_ids]
+        mask_dict = {}
+        for i in range(N):
+            label = self.class_names[class_ids[i]]
+            mask_1_channel = masks[:, :, i]
+            if label not in mask_dict:
+                mask_dict[label] = []
+            mask_dict[label].append(mask_1_channel.astype(np.uint8).tolist())
+        return mask_dict
+
     def segment_img(self, image):
         r = self.model.detect([image], verbose=1)[0]
         masks = r['masks']
         class_ids = r['class_ids']
         scores = r['scores']
+        rois = r['rois']
         N = class_ids.shape[0]
         white_img = np.ones(image.shape) * 255
         results = {}
@@ -88,12 +114,11 @@ class SketchSegment:
             mask_3_channel = np.zeros_like(white_img)
             for ch in range(3):
                 mask_3_channel[:, :, ch] = mask_1_channel
-
             extracted_img = np.where(mask_3_channel, image, white_img).astype(np.uint8)
             skimage.io.imsave('test' + str(i) + label + '.png', extracted_img)
             if label not in results:
                 results[label] = []
-            results[label].append(extracted_img)
+            results[label].append((extracted_img, rois[i]))
         return results
 
 

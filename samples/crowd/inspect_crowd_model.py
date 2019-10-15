@@ -39,7 +39,7 @@ from samples.crowd import crowd
 
 # get_ipython().run_line_magic('matplotlib', 'inline')
 
-name_map = { "wall" : 1, "area" : 2, "path" : 3}
+name_map = { "wall" : 1, "area" : 2, "path" : 3, "intersection" : 4}
 
 if __name__ == '__main__':
 
@@ -58,7 +58,8 @@ if __name__ == '__main__':
 
 
     config = crowd.BalloonConfig()
-    BALLOON_DIR = os.path.join(".", "data/seg-v8")
+    # BALLOON_DIR = os.path.join(".", "data/seg-v9-non-overlap")
+    BALLOON_DIR = os.path.join(".", "data/seg-v9-overlap")
 
 
     # In[3]:
@@ -76,9 +77,9 @@ if __name__ == '__main__':
         IMAGE_RESIZE_MODE = "none"
         IMAGE_MIN_DIM = 512
         IMAGE_MAX_DIM = 512
-        DETECTION_MIN_CONFIDENCE = 0.9
-        RPN_NMS_THRESHOLD = 0.85
-        DETECTION_NMS_THRESHOLD = 0.70
+        # DETECTION_MIN_CONFIDENCE = 0.9
+        # RPN_NMS_THRESHOLD = 0.85
+        # DETECTION_NMS_THRESHOLD = 0.70
 
 
 
@@ -164,7 +165,9 @@ if __name__ == '__main__':
 
     # In[9]:
 
-    APs = []
+    AP_50s = []
+    AP_75s = []
+    mAP = []
 
     for image_id in dataset.image_ids:
     # image_id = random.choice(dataset.image_ids)
@@ -191,12 +194,28 @@ if __name__ == '__main__':
         log("gt_bbox", gt_bbox)
         log("gt_mask", gt_mask)
 
-        AP, precisions, recalls, overlaps = \
+        AP_50, precisions, recalls, overlaps = \
             utils.compute_ap(gt_bbox, gt_class_id, gt_mask,
-                             r['rois'], r['class_ids'], r['scores'], r['masks'])
-        APs.append(AP)
+                             r['rois'], r['class_ids'], r['scores'], r['masks'], iou_threshold=0.5)
+        AP_75, precisions, recalls, overlaps = \
+            utils.compute_ap(gt_bbox, gt_class_id, gt_mask,
+                             r['rois'], r['class_ids'], r['scores'], r['masks'], iou_threshold=0.75)
 
-    print("mAP @ IoU=50: ", np.mean(APs))
+        AP_50s.append(AP_50)
+        AP_75s.append(AP_75)
+
+        # mean AP caluculation, according to https://medium.com/@jonathan_hui/map-mean-average-precision-for-object-detection-45c121a31173
+        # AP @ IOU = [.5, .95, .05] is the average of .5 to .95 IoU with in steps of .05
+
+        for iou in range(.5, .95, .05):
+            ap , precisions, recalls, overlaps = \
+                utils.compute_ap(gt_bbox, gt_class_id, gt_mask,
+                                 r['rois'], r['class_ids'], r['scores'], r['masks'], iou_threshold=iou)
+            mAP.append(ap)
+
+    print("mAP @ IoU=50: ", np.mean(AP_50s))
+    print("mAP @ IoU=75: ", np.mean(AP_75s))
+    print("mAP @ IoU=[.5, .95, .05]: ", np.mean(mAP))
 
     # mask = r['masks']
     # mask = (np.sum(mask, -1, keepdims=True) >= 1)

@@ -35,6 +35,30 @@ def infer():
     print(output_params)
     return jsonify({"params": output_params})
 
+@app.route('/imginferV2/segment', methods=['GET', 'POST'])
+def segment():
+    content = request.json
+    img_numpy = np.array(content['imgs']).astype(np.uint8)
+    output_params = inference_engine.segment_img(img_numpy)
+    print(output_params)
+    return jsonify({"params": output_params})
+
+@app.route('/imginferV2/regress', methods=['GET', 'POST'])
+def regress():
+    content = request.json
+    img_dict = content['imgs']
+    regress_dict = {}
+    for k, imgs in img_dict.items():
+        if k not in regress_dict:
+            regress_dict[k] = []
+        for img in imgs:
+            img_numpy = np.array(img).astype(np.uint8)
+            regress_dict[k].append(img_numpy)
+    output_params = inference_engine.regress_imgs(regress_dict)
+    print(output_params)
+    return jsonify({"params": output_params})
+
+
 
 class User(Resource):
     def get(self, name):
@@ -72,13 +96,15 @@ def main():
     print('current working dir', os.getcwd())
 
     inference_engine = SketchInfer.TotalInfer(args)
-    # inference_engine.init()
-    # app.run()
+    inference_engine.init()
+    app.run()
 
-    estimated_pts = np.array([0.6785781979560852, 0.7342093586921692, 0.556641697883606, 0.5983264446258545, 0.44624197483062744, 0.47519931197166443, 0.3184840679168701, 0.3628543019294739])
-    estimated_pts = np.reshape(estimated_pts, (estimated_pts.shape[0] // 2, 2))
+    # inference_engine.warp_fix()
 
-    inference_engine.fit_curve_pts(estimated_pts)
+    # estimated_pts = np.array([0.6785781979560852, 0.7342093586921692, 0.556641697883606, 0.5983264446258545, 0.44624197483062744, 0.47519931197166443, 0.3184840679168701, 0.3628543019294739])
+    # estimated_pts = np.reshape(estimated_pts, (estimated_pts.shape[0] // 2, 2))
+    #
+    # inference_engine.fit_curve_pts(estimated_pts)
 
     # inference_engine.show_catmull_spline(np.random.rand(20).reshape((10, 2)))
     # inference_engine.show_catmull_spline(np.random.rand(6,2), True)
@@ -86,7 +112,7 @@ def main():
     # api = Api(app)
     # api.add_resource(User, "/user/<string:name>")
     # api.add_resource(ImgInfer, "/imginfer")
-    #app.run(debug=True)
+    app.run(debug=True)
 
 
 
